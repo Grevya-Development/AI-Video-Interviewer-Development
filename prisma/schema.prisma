@@ -1,0 +1,153 @@
+// InterviewIQ data model
+// Postgres (Supabase). Run `npm run db:push` (or db:migrate) to apply.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  HR
+  CANDIDATE
+}
+
+enum SessionStatus {
+  DRAFT // created, not yet started
+  LIVE // interview in progress
+  ENDED // interview finished, awaiting/has evaluation
+}
+
+enum QuestionStatus {
+  PENDING
+  ASKED
+  SKIPPED
+}
+
+enum Decision {
+  HIRE
+  HOLD
+  REJECT
+}
+
+// An HR user. Auth (email/password) is handled by Supabase Auth; this row
+// mirrors the Supabase auth user via `authUserId` so we can own relations.
+model User {
+  id         String    @id @default(cuid())
+  authUserId String    @unique // Supabase auth.users.id
+  email      String    @unique
+  name       String?
+  createdAt  DateTime  @default(now())
+  sessions   Session[]
+}
+
+model Session {
+  id             String        @id @default(cuid())
+  jobTitle       String
+  jobDescription String        @db.Text
+  status         SessionStatus @default(DRAFT)
+
+  // LiveKit room name (unique per session).
+  roomName       String        @unique @default(cuid())
+
+  // Tokens that act as secret access links.
+  candidateToken String        @unique @default(cuid()) // candidate join link
+  reportToken    String        @unique @default(cuid()) // shareable report link
+
+  // Optional countdown target in minutes (null = elapsed-only timer).
+  durationMinutes Int?
+
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  owner          User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId        String
+
+  questions      Question[]
+  participants   Participant[]
+  transcript     TranscriptSegment[]
+  flags          Flag[]
+  evaluation     EvaluationResult?
+
+  @@index([ownerId])
+}
+
+model Participant {
+  id          String   @id @default(cuid())
+  role        Role
+  displayName String
+  // LiveKit participant identity, set when they connect.
+  identity    String?
+  joinedAt    DateTime?
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String
+
+  @@index([sessionId])
+}
+
+model Question {
+  id        String         @id @default(cuid())
+  text      String         @db.Text
+  order     Int
+  status    QuestionStatus @default(PENDING)
+  note      String?        @db.Text // HR note attached to the question
+  askedAt   DateTime?
+  session   Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  @@index([sessionId])
+}
+
+model TranscriptSegment {
+  id          String   @id @default(cuid())
+  // Speaker label derived from LiveKit track identity.
+  speakerRole Role
+  speakerName String
+  text        String   @db.Text
+  // Seconds from session start (for ordering, flagging, playback).
+  startMs     Int
+  endMs       Int
+  createdAt   DateTime @default(now())
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String
+
+  @@index([sessionId, startMs])
+}
+
+model Flag {
+  id         String   @id @default(cuid())
+  label      String?
+  // Timestamp (ms from session start) this flag bookmarks.
+  timestampMs Int
+  createdAt  DateTime @default(now())
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+
+  @@index([sessionId])
+}
+
+model EvaluationResult {
+  id              String   @id @default(cuid())
+  decision        Decision
+  overallScore    Int // 0–100
+  // Structured per-dimension { score, reasoning } map.
+  dimensionScores Json
+  hireRationale   String   @db.Text
+  strengths       String[]
+  gaps            String[]
+  candidateFeedback String @db.Text
+  improvementSuggestions String[]
+  // The raw model response, for auditing.
+  rawModelOutput  Json?
+  model           String?
+  createdAt       DateTime @default(now())
+
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId       String   @unique
+}
