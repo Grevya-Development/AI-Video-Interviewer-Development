@@ -54,15 +54,32 @@ export async function POST(req: Request) {
     speakerRole = "HR";
   }
 
+  const WHISPER_HALLUCINATIONS = new Set([
+    "thank you", "thank you.", "thank you very much.",
+    "thanks for watching", "thanks for watching.",
+    "you", "you.", "yeah", "yeah.", "bye", "bye.",
+    "subtitles by", "subscribe", "please subscribe",
+    "oh", "oh.", "uh", "uh.", "um", "um."
+  ]);
+
+  function isHallucination(val: string): boolean {
+    const clean = val.toLowerCase().trim().replace(/[.,!?]/g, "");
+    return WHISPER_HALLUCINATIONS.has(clean) || clean.length <= 1;
+  }
+
   let text: string;
   try {
-    text = await transcribeAudio(audio, "chunk.webm");
+    const filename = (audio as any).name || "chunk.webm";
+    text = await transcribeAudio(audio, filename);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Transcription failed";
     console.error("[/api/transcribe]", message);
     return NextResponse.json({ error: message }, { status: 502 });
   }
-  if (!text) return NextResponse.json({ segment: null }); // silence
+
+  if (!text || isHallucination(text)) {
+    return NextResponse.json({ segment: null }); // silence or hallucinated noise
+  }
 
   const participant = await prisma.participant.findFirst({
     where: { sessionId: session.id, role: speakerRole },

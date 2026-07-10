@@ -40,12 +40,12 @@ export function useChunkedTranscription(opts: {
         ? "audio/webm"
         : "";
 
-    async function post(blob: Blob, segStartEpoch: number) {
+    async function post(blob: Blob, segStartEpoch: number, extension: string) {
       if (blob.size < 2000) return; // skip near-silent / empty
       const startMs = Math.max(0, segStartEpoch - startEpoch);
       const endMs = Date.now() - startEpoch;
       const form = new FormData();
-      form.append("audio", blob, "chunk.webm");
+      form.append("audio", blob, `chunk.${extension}`);
       form.append("sessionId", sessionId);
       form.append("startMs", String(startMs));
       form.append("endMs", String(endMs));
@@ -71,20 +71,32 @@ export function useChunkedTranscription(opts: {
       const chunks: BlobPart[] = [];
       const segStartEpoch = Date.now();
 
+      let actualMimeType = mime || "audio/webm";
       try {
         recorder = mime
           ? new MediaRecorder(stream, { mimeType: mime })
           : new MediaRecorder(stream);
+        actualMimeType = recorder.mimeType || actualMimeType;
       } catch {
         return;
+      }
+
+      let extension = "webm";
+      const m = actualMimeType.toLowerCase();
+      if (m.includes("mp4") || m.includes("aac") || m.includes("m4a")) {
+        extension = "mp4";
+      } else if (m.includes("ogg")) {
+        extension = "ogg";
+      } else if (m.includes("wav")) {
+        extension = "wav";
       }
 
       recorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) chunks.push(e.data);
       };
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: mime || "audio/webm" });
-        void post(blob, segStartEpoch);
+        const blob = new Blob(chunks, { type: actualMimeType });
+        void post(blob, segStartEpoch, extension);
         if (!stopped) recordOnce(); // start the next chunk
       };
 

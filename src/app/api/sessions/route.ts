@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -61,6 +62,8 @@ export async function POST(req: Request) {
     },
     include: { questions: true },
   });
+
+  revalidatePath("/dashboard");
 
   return NextResponse.json({ session }, { status: 201 });
 }

@@ -5,7 +5,7 @@ import { Brand } from "@/components/Brand";
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { next?: string };
+  searchParams: { next?: string; error?: string; message?: string };
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -20,7 +20,13 @@ export default function LoginPage({
           <p className="mb-6 text-sm text-slate-500">
             Sign in to your HR account to run interviews.
           </p>
-          <AuthForm mode="login" next={searchParams.next} />
+
+          <AuthForm
+            mode="login"
+            next={searchParams.next}
+            error={searchParams.error}
+            message={searchParams.message}
+          />
         </div>
       </div>
     </main>
