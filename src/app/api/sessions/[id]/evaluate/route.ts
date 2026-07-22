@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { chatCompletion, LLM_MODEL } from "@/lib/llm";
@@ -164,6 +165,8 @@ export async function POST(
       data: { status: "ENDED", endedAt: session.endedAt ?? new Date() },
     });
   }
+
+  revalidatePath("/dashboard");
 
   return NextResponse.json({
     evaluation,

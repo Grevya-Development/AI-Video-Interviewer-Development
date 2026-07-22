@@ -18,7 +18,7 @@ export function Brand({
   const iq = "text-[#02a4ef]";
 
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex items-center gap-1 sm:gap-2">
       <Image
         src="/grevya-icon.svg"
         alt="Grevya"
@@ -28,10 +28,9 @@ export function Brand({
       />
       <span className={`font-bold tracking-tight ${text}`}>
         <span className={grevya}>Grevya</span>
-        <span className={variant === "dark" ? "text-slate-400" : "text-slate-400"}>
-          {" "}·{" "}
-        </span>
-        <span className={iq}>Interview IQ</span>
+        <span className="hidden sm:inline text-slate-400"> · </span>
+        <span className={`hidden sm:inline ${iq}`}>Interview IQ</span>
+        <span className={`sm:hidden ${iq}`}> IQ</span>
       </span>
     </span>
   );

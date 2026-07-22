@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
+  useRoomContext,
 } from "@livekit/components-react";
+import { RoomEvent } from "livekit-client";
 import { Loader2 } from "lucide-react";
 import { VideoGrid } from "./VideoGrid";
 import { MediaControls } from "./MediaControls";
@@ -99,12 +101,26 @@ function CandidateInner({
   jobTitle: string;
   startEpoch: number;
 }) {
+  const room = useRoomContext();
+  const [disconnected, setDisconnected] = useState(false);
+
+  useEffect(() => {
+    if (!room) return;
+    const onDisconnect = () => {
+      setDisconnected(true);
+    };
+    room.on(RoomEvent.Disconnected, onDisconnect);
+    return () => {
+      room.off(RoomEvent.Disconnected, onDisconnect);
+    };
+  }, [room]);
+
   // Candidate records own mic for transcription. No AI UI is ever shown.
   useChunkedTranscription({
     sessionId,
     startEpoch,
     candidateToken,
-    enabled: true,
+    enabled: !disconnected,
   });
 
   const [blink, setBlink] = useState(true);
@@ -112,6 +128,17 @@ function CandidateInner({
     const t = setInterval(() => setBlink((b) => !b), 1000);
     return () => clearInterval(t);
   }, []);
+
+  if (disconnected) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-slate-900 px-6 text-center text-white">
+        <h1 className="text-2xl font-semibold">This interview has ended</h1>
+        <p className="mt-2 text-slate-300">
+          Thank you for your time. You may close this window.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen flex-col bg-slate-900">
