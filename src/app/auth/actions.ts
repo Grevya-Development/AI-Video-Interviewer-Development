@@ -68,7 +68,6 @@ export async function signIn(
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "/dashboard");
 
-  console.log("signIn server action called for email:", email);
 
   // Query auth.users directly in the Supabase secure auth schema
   const existingAuthUsers = await prisma.$queryRaw<any[]>`
@@ -94,7 +93,6 @@ export async function signUp(
   const password = String(formData.get("password") ?? "");
   const name = String(formData.get("name") ?? "").trim();
 
-  console.log("signUp server action called for email:", email);
 
   if (!name) {
     return { error: "Name is required.", timestamp: Date.now() };
