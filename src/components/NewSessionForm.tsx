@@ -90,7 +90,7 @@ export function NewSessionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-5 p-6">
+    <form onSubmit={handleSubmit} className="card space-y-5 p-4 sm:p-6">
       <div>
         <label className="label" htmlFor="jobTitle">
           Job title
@@ -126,7 +126,7 @@ export function NewSessionForm() {
           id="duration"
           type="number"
           min={1}
-          className="input max-w-[160px]"
+          className="input w-full sm:max-w-[180px]"
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
           placeholder="e.g. 45"
@@ -137,7 +137,7 @@ export function NewSessionForm() {
       </div>
 
       <div>
-        <div className="mb-1.5 flex items-center justify-between">
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <label className="label mb-0">Interview questions</label>
           <button
             type="button"
@@ -150,7 +150,7 @@ export function NewSessionForm() {
             ) : (
               <Sparkles className="h-3.5 w-3.5" />
             )}
-            {generating ? "Generating…" : "Generate from JD with AI"}
+            {generating ? " Generating…" : " Generate from JD with AI"}
           </button>
         </div>
         <p className="mb-2 text-xs text-slate-400">
@@ -158,13 +158,13 @@ export function NewSessionForm() {
         </p>
         <div className="space-y-2">
           {questions.map((q, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <span className="mt-2.5 w-5 text-right text-sm text-slate-400">
+            <div key={i} className="flex items-center gap-2">
+              <span className="w-5 text-right text-sm font-medium text-slate-400 select-none">
                 {i + 1}.
               </span>
-              <textarea
-                rows={1}
-                className="input resize-y"
+              <input
+                type="text"
+                className="input"
                 value={q}
                 onChange={(e) => updateQuestion(i, e.target.value)}
                 placeholder="Type a question…"
@@ -172,10 +172,10 @@ export function NewSessionForm() {
               <button
                 type="button"
                 onClick={() => removeQuestion(i)}
-                className="btn-ghost mt-0.5 px-2"
+                className="btn-ghost p-2 flex-shrink-0"
                 aria-label="Remove question"
               >
-                <Trash2 className="h-4 w-4 text-slate-400" />
+                <Trash2 className="h-4 w-4 text-slate-400 hover:text-red-500 transition-colors" />
               </button>
             </div>
           ))}
@@ -191,8 +191,19 @@ export function NewSessionForm() {
         </p>
       )}
 
-      <div className="flex justify-end gap-2">
-        <button type="submit" className="btn-primary" disabled={submitting}>
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          className="btn-secondary w-full sm:w-auto"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="btn-primary w-full sm:w-auto"
+          disabled={submitting}
+        >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
           Create & open room
         </button>

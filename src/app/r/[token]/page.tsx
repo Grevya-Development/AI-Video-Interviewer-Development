@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, MinusCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle2, MinusCircle, XCircle, AlertCircle, ArrowLeft, Flag } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { RUBRIC_DIMENSIONS, type DimensionScores } from "@/lib/rubric";
 import { ScoreChart } from "@/components/report/ScoreChart";
 import { PrintButton } from "@/components/report/PrintButton";
@@ -36,6 +38,8 @@ export default async function ReportPage({
 }: {
   params: { token: string };
 }) {
+  const user = await getCurrentUser();
+
   const session = await prisma.session.findUnique({
     where: { reportToken: params.token },
     include: {
@@ -83,8 +87,16 @@ export default async function ReportPage({
   return (
     <main className="min-h-screen bg-slate-50 py-8 print:bg-white">
       <div className="mx-auto max-w-3xl px-6">
+        {user && (
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800 mb-4 no-print"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to dashboard
+          </Link>
+        )}
         {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="mb-1 flex items-center gap-2">
               <Brand size="sm" />
@@ -98,7 +110,7 @@ export default async function ReportPage({
               {session.flags.length > 0 && ` · ${session.flags.length} flagged moments`}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 no-print">
             <CopyLinkButton path={`/r/${session.reportToken}`} />
             <PrintButton />
             <DownloadTranscriptButton
@@ -139,6 +151,28 @@ export default async function ReportPage({
           </h2>
           <p className="mt-2 text-slate-700">{e.hireRationale}</p>
         </div>
+
+        {/* Flagged moments */}
+        {session.flags.length > 0 && (
+          <div className="card print-full mb-4 p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
+              <Flag className="h-4 w-4 text-amber-500 animate-pulse" />
+              Flagged moments
+            </h2>
+            <div className="mt-3 space-y-2.5">
+              {session.flags.map((f) => (
+                <div key={f.id} className="flex items-start gap-3 border-t border-slate-100 pt-2.5 first:border-0 first:pt-0">
+                  <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-xs font-semibold font-mono text-amber-700 select-none">
+                    {formatMs(f.timestampMs)}
+                  </span>
+                  <p className="text-sm text-slate-700">
+                    {f.label || "Flagged moment"}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Score breakdown chart */}
         <div className="card print-full mb-4 p-6">
@@ -225,4 +259,11 @@ export default async function ReportPage({
       </div>
     </main>
   );
+}
+
+function formatMs(ms: number) {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }

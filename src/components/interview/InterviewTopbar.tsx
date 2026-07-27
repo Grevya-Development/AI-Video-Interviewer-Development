@@ -91,7 +91,7 @@ export function InterviewTopbar({
   }
 
   return (
-    <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2.5">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 bg-white px-4 py-2.5">
       <div className="flex items-center gap-2">
         <Clock className={`h-4 w-4 ${overtime ? "text-red-500" : "text-slate-400"}`} />
         <span
@@ -106,8 +106,8 @@ export function InterviewTopbar({
         </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button onClick={copyLink} className="btn-secondary">
+      <div className="flex flex-wrap items-center gap-2">
+        <button onClick={copyLink} className="btn-secondary flex-1 sm:flex-none">
           {copied ? (
             <Check className="h-4 w-4 text-emerald-600" />
           ) : (
@@ -115,10 +115,10 @@ export function InterviewTopbar({
           )}
           {copied ? "Copied" : "Candidate link"}
         </button>
-        <button onClick={addFlag} className="btn-secondary" disabled={flagging}>
+        <button onClick={addFlag} className="btn-secondary flex-1 sm:flex-none" disabled={flagging}>
           <Flag className="h-4 w-4 text-amber-500" /> Flag moment
         </button>
-        <button onClick={endAndEvaluate} className="btn-primary" disabled={ending}>
+        <button onClick={endAndEvaluate} className="btn-primary w-full sm:w-auto" disabled={ending}>
           {ending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (

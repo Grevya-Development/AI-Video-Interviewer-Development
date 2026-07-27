@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { RoomServiceClient } from "livekit-server-sdk";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -58,6 +60,26 @@ export async function PATCH(
     },
   });
 
+  if (status === "ENDED") {
+    const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
+    const httpUrl = wsUrl.replace(/^ws/, "http");
+    if (httpUrl && process.env.LIVEKIT_API_KEY && process.env.LIVEKIT_API_SECRET) {
+      try {
+        const svc = new RoomServiceClient(
+          httpUrl,
+          process.env.LIVEKIT_API_KEY,
+          process.env.LIVEKIT_API_SECRET,
+        );
+        await svc.deleteRoom(session.roomName);
+        console.log(`Successfully deleted LiveKit room on session end: ${session.roomName}`);
+      } catch (err) {
+        console.error("Failed to delete LiveKit room:", err);
+      }
+    }
+  }
+
+  revalidatePath("/dashboard");
+
   return NextResponse.json({ session });
 }
 
@@ -73,5 +95,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.session.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
+
+  revalidatePath("/dashboard");
+
+  return NextResponse.json({ success: true });
 }

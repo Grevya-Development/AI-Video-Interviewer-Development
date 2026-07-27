@@ -22,11 +22,11 @@ export default async function InterviewPage({
   });
   if (!session) notFound();
 
-  // Mark LIVE on first open.
-  if (session.status === "DRAFT") {
+  // Mark LIVE on first open or re-open.
+  if (session.status === "DRAFT" || session.status === "ENDED") {
     await prisma.session.update({
       where: { id: session.id },
-      data: { status: "LIVE", startedAt: new Date() },
+      data: { status: "LIVE", startedAt: session.status === "DRAFT" ? new Date() : session.startedAt },
     });
   }
 

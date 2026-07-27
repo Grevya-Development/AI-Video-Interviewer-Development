@@ -87,6 +87,7 @@ function HrPanelInner({
 }: Props & { startEpoch: number }) {
   const [followup, setFollowup] = useState<string | null>(null);
   const [followupLoading, setFollowupLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"video" | "questions">("video");
 
   // HR records its own mic for transcription.
   useChunkedTranscription({ sessionId, startEpoch, enabled: true });
@@ -126,7 +127,7 @@ function HrPanelInner({
 
   return (
     <div className="flex h-screen flex-col bg-slate-50">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-200 bg-white px-4 py-2 gap-2">
         <span className="text-sm font-semibold text-slate-700">
           {jobTitle} · HR view
         </span>
@@ -139,9 +140,39 @@ function HrPanelInner({
         candidateToken={candidateToken}
       />
 
+      {/* Mobile view Tab Switcher */}
+      <div className="flex border-b border-slate-200 bg-white lg:hidden">
+        <button
+          type="button"
+          onClick={() => setActiveTab("video")}
+          className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === "video"
+              ? "border-brand-600 text-brand-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Interview Room
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("questions")}
+          className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === "questions"
+              ? "border-brand-600 text-brand-600"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          Questions ({questions.length})
+        </button>
+      </div>
+
       <div className="grid min-h-0 flex-1 grid-cols-12 gap-3 p-3">
         {/* Left: questions + AI follow-up */}
-        <aside className="col-span-12 min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-white lg:col-span-3">
+        <aside
+          className={`col-span-12 min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-white lg:col-span-3 lg:flex lg:flex-col ${
+            activeTab === "questions" ? "flex flex-col h-full" : "hidden"
+          }`}
+        >
           <QuestionSidebar
             initial={questions}
             followup={followup}
@@ -151,8 +182,12 @@ function HrPanelInner({
         </aside>
 
         {/* Center: video + transcript */}
-        <main className="col-span-12 flex min-h-0 flex-col gap-3 lg:col-span-6">
-          <div className="h-[40%] min-h-0">
+        <main
+          className={`col-span-12 min-h-0 flex-col gap-3 lg:col-span-6 lg:flex ${
+            activeTab === "video" ? "flex h-full" : "hidden"
+          }`}
+        >
+          <div className="h-auto lg:h-[40%] flex-shrink-0 min-h-0">
             <VideoGrid />
           </div>
           <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white">
