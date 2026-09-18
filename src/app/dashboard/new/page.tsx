@@ -11,7 +11,6 @@ export default async function NewSessionPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader email={user.email} />
       <main className="mx-auto max-w-2xl px-6 py-8">
         <Link
           href="/dashboard"

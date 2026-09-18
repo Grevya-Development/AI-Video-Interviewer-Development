@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 const decisionMeta = {
   HIRE: {
-    label: "Hire",
+    label: "Approved",
     cls: "bg-green-100 text-green-800 border-green-200",
     Icon: CheckCircle2,
     bar: "bg-green-600",
@@ -87,30 +87,31 @@ export default async function ReportPage({
   return (
     <main className="min-h-screen bg-slate-50 py-8 print:bg-white">
       <div className="mx-auto max-w-3xl px-6">
-        {user && (
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-800 mb-4 no-print"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to dashboard
-          </Link>
-        )}
-        {/* Header */}
+        {/* Responsive Header */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <Brand size="sm" />
-              <span className="text-sm font-medium text-slate-400">· Report</span>
+          <div className="min-w-0 flex-1">
+            {user && (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 mb-2 no-print"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to dashboard
+              </Link>
+            )}
+            <div className="flex items-center gap-2 mb-1">
+              <span className="rounded-md bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 uppercase tracking-wide">
+                Interview Report
+              </span>
             </div>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl break-words">
               {session.jobTitle}
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 sm:text-sm">
               {askedCount} of {session.questions.length} questions asked
               {session.flags.length > 0 && ` · ${session.flags.length} flagged moments`}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 no-print">
+          <div className="flex flex-wrap items-center gap-2 no-print shrink-0 sm:self-start">
             <CopyLinkButton path={`/r/${session.reportToken}`} />
             <PrintButton />
             <DownloadTranscriptButton
@@ -145,12 +146,14 @@ export default async function ReportPage({
         </div>
 
         {/* Rationale */}
-        <div className="card print-full mb-4 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Rationale
-          </h2>
-          <p className="mt-2 text-slate-700">{e.hireRationale}</p>
-        </div>
+        {e.hireRationale && e.hireRationale.trim() !== "" && (
+          <div className="card print-full mb-4 p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Rationale / Interviewer Notes
+            </h2>
+            <p className="mt-2 text-slate-700 whitespace-pre-line">{e.hireRationale}</p>
+          </div>
+        )}
 
         {/* Flagged moments */}
         {session.flags.length > 0 && (
@@ -175,82 +178,98 @@ export default async function ReportPage({
         )}
 
         {/* Score breakdown chart */}
-        <div className="card print-full mb-4 p-6">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Score breakdown
-          </h2>
-          <ScoreChart data={chartData} />
-          <div className="mt-4 space-y-3">
-            {RUBRIC_DIMENSIONS.map((d) => (
-              <div key={d.key} className="border-t border-slate-100 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-800">
-                    {d.label}
-                  </span>
-                  <span className="text-sm font-semibold text-slate-600">
-                    {dims?.[d.key]?.score ?? 0}/100
-                  </span>
-                </div>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  {dims?.[d.key]?.reasoning ?? "—"}
-                </p>
-              </div>
-            ))}
+        {chartData.some((d) => d.score > 0) && (
+          <div className="card print-full mb-4 p-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Score breakdown
+            </h2>
+            <ScoreChart data={chartData} />
+            <div className="mt-4 space-y-3">
+              {RUBRIC_DIMENSIONS.map((d) => {
+                const dimScore = dims?.[d.key]?.score ?? 0;
+                const reasoning = dims?.[d.key]?.reasoning;
+                if (dimScore === 0 && !reasoning) return null;
+                return (
+                  <div key={d.key} className="border-t border-slate-100 pt-3 first:border-0 first:pt-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-800">
+                        {d.label}
+                      </span>
+                      <span className="text-sm font-semibold text-slate-600">
+                        {dimScore}/100
+                      </span>
+                    </div>
+                    {reasoning && reasoning !== "—" && (
+                      <p className="mt-0.5 text-sm text-slate-500">{reasoning}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Strengths & gaps */}
-        <div className="mb-4 grid gap-4 sm:grid-cols-2">
-          <div className="card print-full p-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-700">
-              Strengths
-            </h2>
-            <ul className="space-y-1.5">
-              {e.strengths.map((s, i) => (
-                <li key={i} className="flex gap-2 text-sm text-slate-700">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                  {s}
-                </li>
-              ))}
-            </ul>
+        {((e.strengths && e.strengths.length > 0) || (e.gaps && e.gaps.length > 0)) && (
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
+            {e.strengths && e.strengths.length > 0 && (
+              <div className="card print-full p-6">
+                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-green-700">
+                  Strengths
+                </h2>
+                <ul className="space-y-1.5">
+                  {e.strengths.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {e.gaps && e.gaps.length > 0 && (
+              <div className="card print-full p-6">
+                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-red-700">
+                  Gaps
+                </h2>
+                <ul className="space-y-1.5">
+                  {e.gaps.map((g, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-700">
+                      <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                      {g}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-          <div className="card print-full p-6">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-red-700">
-              Gaps
-            </h2>
-            <ul className="space-y-1.5">
-              {e.gaps.map((g, i) => (
-                <li key={i} className="flex gap-2 text-sm text-slate-700">
-                  <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                  {g}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        )}
 
         {/* Candidate feedback */}
-        <div className="card print-full mb-4 border-brand-100 bg-brand-50/40 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-700">
-            Candidate feedback
-          </h2>
-          <p className="mt-2 text-slate-700">{e.candidateFeedback}</p>
-          {e.improvementSuggestions.length > 0 && (
-            <>
-              <h3 className="mt-4 text-sm font-medium text-slate-700">
-                Suggested improvements
-              </h3>
-              <ul className="mt-1.5 space-y-1.5">
-                {e.improvementSuggestions.map((s, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-slate-600">
-                    <span className="text-brand-500">→</span>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </div>
+        {((e.candidateFeedback && e.candidateFeedback.trim() !== "") ||
+          (e.improvementSuggestions && e.improvementSuggestions.length > 0)) && (
+          <div className="card print-full mb-4 border-brand-100 bg-brand-50/40 p-6">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-700">
+              Candidate feedback
+            </h2>
+            {e.candidateFeedback && <p className="mt-2 text-slate-700">{e.candidateFeedback}</p>}
+            {e.improvementSuggestions && e.improvementSuggestions.length > 0 && (
+              <>
+                <h3 className="mt-4 text-sm font-medium text-slate-700">
+                  Suggested improvements
+                </h3>
+                <ul className="mt-1.5 space-y-1.5">
+                  {e.improvementSuggestions.map((s, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-slate-600">
+                      <span className="text-brand-500">→</span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
 
         <p className="pb-8 text-center text-xs text-slate-400">
           Generated by Grevya · Interview IQ{e.model ? ` · ${e.model}` : ""}. This

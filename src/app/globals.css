@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: 250 250 252;
-  --foreground: 15 18 28;
+  --background: 248 250 252;
+  --foreground: 15 23 42;
 }
 
 html,
@@ -50,3 +50,35 @@ body {
     border: none !important;
   }
 }
+
+/* LiveKit responsive video styling: Google Meet natural proportional video (no distortion/stretching) */
+.participant-media-video,
+video.participant-media-video,
+.participant-media-video[data-orientation='landscape'],
+.participant-media-video[data-orientation='portrait'],
+.lk-video-container video,
+.lk-participant-tile video {
+  object-fit: cover !important;
+  object-position: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Screen share track must always be object-contain so code/slides are crisp and never distorted */
+.screenshare-track video,
+.screenshare-track .participant-media-video,
+video[data-source='screen_share'],
+.participant-media-video[data-source='screen_share'] {
+  object-fit: contain !important;
+  object-position: center !important;
+}
+
+
+/* Picture-in-picture (PIP) floating thumbnail: fill the small tile neatly */
+.pip-video video,
+.pip-video .participant-media-video {
+  object-fit: cover !important;
+}
+
+
+

@@ -8,28 +8,33 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const session = await prisma.session.findFirst({
-    where: { id: params.id, ownerId: user.id },
-    select: { id: true },
-  });
-  if (!session)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const session = await prisma.session.findFirst({
+      where: { id: params.id, ownerId: user.id },
+      select: { id: true },
+    });
+    if (!session)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const segments = await prisma.transcriptSegment.findMany({
-    where: { sessionId: params.id },
-    orderBy: { startMs: "asc" },
-    select: {
-      id: true,
-      speakerRole: true,
-      speakerName: true,
-      text: true,
-      startMs: true,
-      endMs: true,
-    },
-  });
+    const segments = await prisma.transcriptSegment.findMany({
+      where: { sessionId: params.id },
+      orderBy: { startMs: "asc" },
+      select: {
+        id: true,
+        speakerRole: true,
+        speakerName: true,
+        text: true,
+        startMs: true,
+        endMs: true,
+      },
+    });
 
-  return NextResponse.json({ segments });
+    return NextResponse.json({ segments });
+  } catch {
+    // Silently handle transient DB network timeouts during live polling
+    return NextResponse.json({ segments: [] });
+  }
 }
