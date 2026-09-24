@@ -27,7 +27,6 @@ import {
   Camera,
   AlertCircle,
   Sparkles,
-  FlipHorizontal,
 } from "lucide-react";
 import { VideoGrid } from "./VideoGrid";
 import { useChunkedTranscription } from "./useChunkedTranscription";
@@ -65,8 +64,7 @@ export function CandidateRoom({
   const [fullscreenActive, setFullscreenActive] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
 
-  // Camera preview ref in lobby (mirrored by default like a real mirror)
-  const [previewMirrored, setPreviewMirrored] = useState(true);
+  // Camera preview ref in lobby (mirrored by default)
   const videoPreviewRef = useRef<HTMLVideoElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
@@ -317,23 +315,12 @@ export function CandidateRoom({
                   autoPlay
                   playsInline
                   muted
-                  className={`h-full w-full object-cover transition-transform duration-200 ${
-                    previewMirrored ? "mirror-video -scale-x-100" : ""
-                  }`}
+                  className="h-full w-full object-cover mirror-video -scale-x-100"
                 />
                 <div className="absolute bottom-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] text-white font-medium">
                   <Camera className="h-3 w-3 text-emerald-400" />
                   <span>Webcam Preview Active</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMirrored((p) => !p)}
-                  className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 hover:bg-black/80 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] text-white font-medium transition-colors cursor-pointer"
-                  title={previewMirrored ? "Mirror mode active (Click to unflip)" : "Click to mirror/flip video horizontally"}
-                >
-                  <FlipHorizontal className="h-3 w-3" />
-                  <span>{previewMirrored ? "Mirrored" : "Normal"}</span>
-                </button>
               </div>
             )}
 
