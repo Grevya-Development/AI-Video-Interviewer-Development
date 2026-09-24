@@ -36,7 +36,7 @@ export default async function DashboardPage({
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-150">
       <main className="mx-auto max-w-6xl px-6 py-8">
         {searchParams.verified === "true" && (
           <div className="mb-6 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 animate-in fade-in slide-in-from-top-2 duration-300">

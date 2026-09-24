@@ -41,8 +41,8 @@ export function Navbar({ user }: NavbarProps) {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
-      fetch("/auth/signout", { method: "POST" }).catch(() => {});
-    } catch {}
+      fetch("/auth/signout", { method: "POST" }).catch(() => { });
+    } catch { }
     router.replace("/login");
     router.refresh();
   };
@@ -100,28 +100,27 @@ export function Navbar({ user }: NavbarProps) {
   // For guests (non-logged-in): Home, About Us, Contact
   const navItems = user
     ? [
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "New Interview", href: "/dashboard/new" },
-      ]
+      { label: "Dashboard", href: "/dashboard" },
+      { label: "New Interview", href: "/dashboard/new" },
+    ]
     : [
-        { label: "Home", href: "/" },
-        { label: "About Us", href: "/#about" },
-        { label: "Contact", href: "/#contact" },
-      ];
+      { label: "Home", href: "/" },
+      { label: "About Us", href: "/#about" },
+      { label: "Contact", href: "/#contact" },
+    ];
 
   return (
     <>
       {/* Header Container:
-          - At full top (!isScrolled): flush at top-0, full-width, matches website background (slate-50)
-          - When scrolled (isScrolled): floating stadium capsule with smooth 500ms spring morphing transition
+          - At full top (!isScrolled): flush at top-0, full-width, translucent gray-200 with backdrop-blur
+          - When scrolled (isScrolled): floating stadium capsule, translucent gray-200 with backdrop-blur-xl
       */}
       <header className="sticky top-0 z-[100] w-full no-print pointer-events-none">
         <div
-          className={`mx-auto pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            isScrolled
-              ? "w-[94%] sm:w-[90%] max-w-6xl rounded-[32px] translate-y-2.5 sm:translate-y-3 bg-white/90 backdrop-blur-xl border border-slate-200/80 shadow-[0_16px_40px_-8px_rgba(15,23,42,0.1),0_4px_12px_rgba(15,23,42,0.04)] px-5 sm:px-8 py-2.5 sm:py-3"
-              : "w-full max-w-full rounded-[0px] translate-y-0 bg-slate-50/95 backdrop-blur-md border border-t-transparent border-x-transparent border-b-slate-200/80 shadow-none px-6 sm:px-10 lg:px-12 py-3.5 sm:py-4"
-          }`}
+          className={`mx-auto pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled
+            ? "w-[94%] sm:w-[90%] max-w-6xl rounded-[32px] translate-y-2.5 sm:translate-y-3 bg-gray-200/75 backdrop-blur-xl border border-gray-300/80 shadow-[0_16px_40px_-8px_rgba(15,23,42,0.1),0_4px_12px_rgba(15,23,42,0.04)] px-5 sm:px-8 py-2.5 sm:py-3"
+            : "w-full max-w-full rounded-[0px] translate-y-0 bg-gray-200/80 backdrop-blur-md border border-t-transparent border-x-transparent border-b-gray-300/80 shadow-none px-6 sm:px-10 lg:px-12 py-3.5 sm:py-4"
+            }`}
         >
           <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-4">
             {/* 1. Left: Brand Logo Lockup */}
@@ -141,11 +140,10 @@ export function Navbar({ user }: NavbarProps) {
                   <Link
                     key={item.label}
                     href={item.href}
-                    className={`relative py-1 font-medium transition-colors hover:text-slate-900 ${
-                      isActive
-                        ? "font-semibold text-slate-900"
-                        : "text-slate-600"
-                    }`}
+                    className={`relative py-1 font-medium transition-colors hover:text-slate-900 ${isActive
+                      ? "font-semibold text-slate-900"
+                      : "text-slate-600"
+                      }`}
                   >
                     {item.label}
                     {/* Active Underline Indicator matching brand blue theme */}
@@ -171,9 +169,8 @@ export function Navbar({ user }: NavbarProps) {
                     onClick={() => {
                       setIsProfileOpen(!isProfileOpen);
                     }}
-                    className={`p-2 rounded-full text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${
-                      isScrolled ? "hover:bg-slate-100/90" : "hover:bg-slate-200/60"
-                    } ${isProfileOpen ? (isScrolled ? "bg-slate-100/90" : "bg-slate-200/60") : ""}`}
+                    className={`p-2 rounded-full text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${isScrolled ? "hover:bg-slate-100/90" : "hover:bg-slate-200/60"
+                      } ${isProfileOpen ? (isScrolled ? "bg-slate-100/90" : "bg-slate-200/60") : ""}`}
                     aria-label="User Account"
                     title={user.email}
                   >
@@ -248,11 +245,10 @@ export function Navbar({ user }: NavbarProps) {
         {/* Mobile Dropdown Menu Card */}
         {isMobileMenuOpen && (
           <div
-            className={`md:hidden mx-auto mt-2 rounded-2xl shadow-xl p-4 pointer-events-auto z-[110] animate-in fade-in slide-in-from-top-2 duration-150 ${
-              isScrolled
-                ? "max-w-6xl w-[95%] bg-white/95 backdrop-blur-xl border border-slate-200"
-                : "max-w-7xl mx-4 bg-slate-50/95 backdrop-blur-xl border border-slate-200"
-            }`}
+            className={`md:hidden mx-auto mt-2 rounded-2xl shadow-xl p-4 pointer-events-auto z-[110] animate-in fade-in slide-in-from-top-2 duration-150 ${isScrolled
+              ? "max-w-6xl w-[95%] bg-gray-200/90 backdrop-blur-xl border border-gray-300/80"
+              : "max-w-7xl mx-4 bg-gray-200/90 backdrop-blur-xl border border-gray-300/80"
+              }`}
           >
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
