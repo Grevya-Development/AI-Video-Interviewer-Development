@@ -220,7 +220,7 @@ export function EvaluationReviewForm({
   return (
     <div className="min-h-screen bg-slate-50 pb-12">
       {/* Top Header */}
-      <div className="border-b border-slate-200 bg-white sticky top-14 z-30 shadow-sm">
+      <div className="border-b border-slate-200 bg-white sticky top-[72px] z-30 shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <Link

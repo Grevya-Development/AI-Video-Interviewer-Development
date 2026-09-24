@@ -15,6 +15,7 @@ import {
   Pin,
   PinOff,
   LayoutGrid,
+  FlipHorizontal,
 } from "lucide-react";
 import type { TrackReference } from "@livekit/components-core";
 
@@ -56,6 +57,9 @@ function ParticipantTile({
   const name = participant.name || participant.identity;
   const initials = getInitials(name);
 
+  // Default to mirrored (flipped horizontally) for local participant camera like a real mirror
+  const [isMirrored, setIsMirrored] = useState(participant.isLocal);
+
   // Active camera detection for both local and remote participants
   const isCamActive = Boolean(
     cameraTrack &&
@@ -78,7 +82,9 @@ function ParticipantTile({
       {cameraTrack && isCamActive ? (
         <VideoTrack
           trackRef={cameraTrack}
-          className="h-full w-full !object-cover rounded-2xl"
+          className={`h-full w-full !object-cover rounded-2xl ${
+            isMirrored ? "mirror-video -scale-x-100" : ""
+          }`}
         />
       ) : (
         /* Camera Off: Google Meet Style Light Avatar Card */
@@ -93,24 +99,45 @@ function ParticipantTile({
         </div>
       )}
 
-      {/* Top-Right Quick Action: Pin / Unpin Button */}
-      {onPinToggle && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onPinToggle();
-          }}
-          className={`absolute top-2.5 right-2.5 z-20 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all duration-200 shadow-md ${
-            isPinned
-              ? "bg-brand-600 text-white opacity-100 ring-2 ring-white"
-              : "bg-white/85 text-slate-700 hover:bg-white hover:text-brand-600 opacity-0 group-hover:opacity-100"
-          }`}
-          title={isPinned ? "Unpin from main view" : "Pin to main view (Spotlight)"}
-        >
-          {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-        </button>
-      )}
+      {/* Top-Right Quick Actions: Flip Video (Mirror) & Pin / Unpin Button */}
+      <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+        {cameraTrack && isCamActive && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMirrored((prev) => !prev);
+            }}
+            className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all duration-200 shadow-md ${
+              isMirrored
+                ? "bg-brand-600 text-white opacity-100 ring-2 ring-white"
+                : "bg-white/85 text-slate-700 hover:bg-white hover:text-brand-600 opacity-0 group-hover:opacity-100"
+            }`}
+            title={isMirrored ? "Video is mirrored (Click to unflip)" : "Click to mirror/flip video horizontally"}
+            aria-label="Flip video horizontally"
+          >
+            <FlipHorizontal className="h-4 w-4" />
+          </button>
+        )}
+
+        {onPinToggle && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPinToggle();
+            }}
+            className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all duration-200 shadow-md ${
+              isPinned
+                ? "bg-brand-600 text-white opacity-100 ring-2 ring-white"
+                : "bg-white/85 text-slate-700 hover:bg-white hover:text-brand-600 opacity-0 group-hover:opacity-100"
+            }`}
+            title={isPinned ? "Unpin from main view" : "Pin to main view (Spotlight)"}
+          >
+            {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
 
       {/* Bottom-Left: Google Meet Minimal Badge (Non-obstructive) */}
       <div className={`absolute bottom-2 left-2 z-10 flex items-center gap-1 rounded-lg bg-black/60 text-white backdrop-blur-md px-2 py-0.5 pointer-events-none ${

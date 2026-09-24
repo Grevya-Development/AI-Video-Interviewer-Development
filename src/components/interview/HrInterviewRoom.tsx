@@ -440,7 +440,7 @@ function HrPanelInner({
               onClick={() => setActiveSidePanel(null)}
             />
 
-            <aside className="fixed inset-y-0 right-0 z-50 w-full sm:w-96 md:static md:w-80 lg:w-96 md:shrink-0 h-full bg-white md:rounded-2xl border-l md:border border-slate-200/90 shadow-xl md:shadow-sm flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+            <aside className="fixed inset-y-0 right-0 z-40 w-full sm:w-96 md:static md:w-80 lg:w-96 md:shrink-0 h-full bg-white md:rounded-2xl border-l md:border border-slate-200/90 shadow-xl md:shadow-sm flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
               {/* Drawer Header Tabs */}
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-3 py-2.5 sm:py-2">
                 <div className="flex items-center gap-1">

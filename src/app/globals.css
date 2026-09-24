@@ -80,5 +80,10 @@ video[data-source='screen_share'],
   object-fit: cover !important;
 }
 
-
-
+/* Mirror camera video: natural mirror reflection (horizontally flipped self-view) */
+.mirror-video,
+.mirror-video video,
+video.mirror-video,
+.mirror-video .participant-media-video {
+  transform: scaleX(-1) !important;
+}
