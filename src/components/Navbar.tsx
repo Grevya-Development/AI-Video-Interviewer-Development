@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Brand } from "@/components/Brand";
 import { createClient } from "@/lib/supabase/client";
+import { ProfileEditModal } from "@/components/ProfileEditModal";
 import {
   User,
+  UserCog,
   Menu,
   X,
   LayoutDashboard,
@@ -16,18 +18,25 @@ import {
 } from "lucide-react";
 
 interface NavbarProps {
-  user: { email: string } | null;
+  user: { email: string; name?: string | null; avatarUrl?: string | null } | null;
 }
 
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Local user data state to allow instant optimistic updates when editing profile
+  const [userData, setUserData] = useState(user);
+  useEffect(() => {
+    setUserData(user);
+  }, [user]);
+
   // Scroll detection: sticky full-width at top-0 vs floating stadium pill on scroll
   const [isScrolled, setIsScrolled] = useState(false);
 
   // State management
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // References for click-outside detection
@@ -98,7 +107,7 @@ export function Navbar({ user }: NavbarProps) {
   // Navigation items:
   // For logged-in users: Dashboard, New Interview
   // For guests (non-logged-in): Home, About Us, Contact
-  const navItems = user
+  const navItems = userData
     ? [
       { label: "Dashboard", href: "/dashboard" },
       { label: "New Interview", href: "/dashboard/new" },
@@ -125,7 +134,7 @@ export function Navbar({ user }: NavbarProps) {
           <div className="w-full max-w-7xl mx-auto flex items-center justify-between gap-4">
             {/* 1. Left: Brand Logo Lockup */}
             <Link
-              href={user ? "/dashboard" : "/"}
+              href={userData ? "/dashboard" : "/"}
               className="group flex items-center gap-2 hover:opacity-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-xl shrink-0"
             >
               <Brand size="md" subtitle="AI INTERVIEWER" />
@@ -162,31 +171,89 @@ export function Navbar({ user }: NavbarProps) {
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
 
               {/* User Profile (when logged in) or Sign In (when logged out) */}
-              {user ? (
+              {userData ? (
                 <div className="relative" ref={profileRef}>
                   <button
                     type="button"
                     onClick={() => {
                       setIsProfileOpen(!isProfileOpen);
                     }}
-                    className={`p-2 rounded-full text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${isScrolled ? "hover:bg-slate-100/90" : "hover:bg-slate-200/60"
+                    className={`p-1 sm:p-1.5 rounded-full text-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-200 ${isScrolled ? "hover:bg-slate-100/90" : "hover:bg-slate-200/60"
                       } ${isProfileOpen ? (isScrolled ? "bg-slate-100/90" : "bg-slate-200/60") : ""}`}
                     aria-label="User Account"
-                    title={user.email}
+                    title={userData.name ? `${userData.name} (${userData.email}) - Click to open menu` : userData.email}
                   >
-                    <User className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                    {userData.avatarUrl ? (
+                      <img
+                        src={userData.avatarUrl}
+                        alt={userData.name || userData.email}
+                        className="h-6 w-6 sm:h-7 sm:w-7 rounded-full object-cover ring-1 ring-slate-300 shadow-2xs"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <User className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                    )}
                   </button>
 
                   {/* Profile Dropdown */}
                   {isProfileOpen && (
                     <div className="absolute right-0 mt-3 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200 shadow-xl py-2 z-[110] animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="px-4 py-2.5 border-b border-slate-100">
-                        <p className="text-xs text-slate-400 font-medium">Signed in as</p>
-                        <p className="text-xs font-semibold text-slate-800 truncate" title={user.email}>
-                          {user.email}
-                        </p>
-                      </div>
+                      {/* Clickable Header card to open Edit Profile */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsProfileOpen(false);
+                          setIsProfileModalOpen(true);
+                        }}
+                        className="w-full text-left flex items-center gap-3 px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-colors group"
+                        title="Click to edit profile"
+                      >
+                        <div className="relative shrink-0">
+                          {userData.avatarUrl ? (
+                            <img
+                              src={userData.avatarUrl}
+                              alt={userData.name || userData.email}
+                              className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="h-9 w-9 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-sm">
+                              {userData.email.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-2xs text-slate-400 group-hover:text-brand-600 transition-colors">
+                            <UserCog className="h-3 w-3" />
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            {userData.name && (
+                              <p className="text-xs font-semibold text-slate-900 truncate">
+                                {userData.name}
+                              </p>
+                            )}
+                            <span className="text-[10px] text-brand-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                              Edit
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate" title={userData.email}>
+                            {userData.email}
+                          </p>
+                        </div>
+                      </button>
+
                       <div className="py-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsProfileOpen(false);
+                            setIsProfileModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors text-left"
+                        >
+                          <UserCog className="h-3.5 w-3.5 text-brand-600" />
+                          Edit Profile
+                        </button>
                         <Link
                           href="/dashboard"
                           className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
@@ -261,11 +328,52 @@ export function Navbar({ user }: NavbarProps) {
                 </Link>
               ))}
               <div className="border-t border-slate-200 my-2 pt-2">
-                {user ? (
+                {userData ? (
                   <>
-                    <div className="px-3 py-1 text-xs text-slate-500 truncate mb-1">
-                      {user.email}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsProfileModalOpen(true);
+                      }}
+                      className="w-full text-left flex items-center gap-2.5 px-3 py-2 border-b border-slate-200/60 mb-2 hover:bg-slate-300/40 rounded-lg transition-colors"
+                      title="Click to edit profile"
+                    >
+                      {userData.avatarUrl ? (
+                        <img
+                          src={userData.avatarUrl}
+                          alt={userData.name || userData.email}
+                          className="h-8 w-8 rounded-full object-cover ring-1 ring-slate-300 shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-xs shrink-0">
+                          {userData.email.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        {userData.name && (
+                          <p className="text-xs font-semibold text-slate-800 truncate">
+                            {userData.name}
+                          </p>
+                        )}
+                        <p className="text-[11px] text-slate-500 truncate" title={userData.email}>
+                          {userData.email}
+                        </p>
+                      </div>
+                      <UserCog className="h-4 w-4 text-brand-600 shrink-0" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setIsProfileModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                    >
+                      <UserCog className="h-4 w-4 text-brand-600" />
+                      Edit Profile
+                    </button>
                     <button
                       type="button"
                       onClick={handleSignOut}
@@ -296,6 +404,26 @@ export function Navbar({ user }: NavbarProps) {
           </div>
         )}
       </header>
+
+      {/* Profile Edit Modal */}
+      {userData && (
+        <ProfileEditModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          currentUser={userData}
+          onProfileUpdated={(updated) => {
+            setUserData((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    name: updated.name,
+                    avatarUrl: updated.avatarUrl,
+                  }
+                : null
+            );
+          }}
+        />
+      )}
     </>
   );
 }

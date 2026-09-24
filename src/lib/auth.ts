@@ -21,19 +21,51 @@ export const getCurrentUser = cache(async (): Promise<User | null> => {
 
   if (!user) return null;
 
+  // Extract avatar URL and display name from Google OAuth metadata
+  const avatarUrl =
+    (user.user_metadata?.avatar_url as string) ||
+    (user.user_metadata?.picture as string) ||
+    null;
+
+  const name =
+    (user.user_metadata?.full_name as string) ||
+    (user.user_metadata?.name as string) ||
+    null;
+
   const existing = await prisma.user.findUnique({
     where: { authUserId: user.id },
   });
-  if (existing) return existing;
 
-  // First sight of this auth user — create the mirror row once.
-  return prisma.user.create({
-    data: {
-      authUserId: user.id,
-      email: user.email ?? "",
-      name: (user.user_metadata?.name as string) ?? null,
-    },
-  });
+  if (existing) {
+    // If user has no avatarUrl or name yet, backfill from metadata
+    if ((avatarUrl && !existing.avatarUrl) || (name && !existing.name)) {
+      return prisma.user.update({
+        where: { id: existing.id },
+        data: {
+          avatarUrl: existing.avatarUrl ?? avatarUrl,
+          name: existing.name ?? name,
+        },
+      });
+    }
+    return existing;
+  }
+
+  // First sight of this auth user — create the mirror row once with avatarUrl.
+  try {
+    return await prisma.user.create({
+      data: {
+        authUserId: user.id,
+        email: user.email ?? "",
+        name: name ?? null,
+        avatarUrl: avatarUrl ?? null,
+      },
+    });
+  } catch {
+    // If concurrent requests raced to create the record, return the created record
+    return prisma.user.findUnique({
+      where: { authUserId: user.id },
+    });
+  }
 });
 
 /** Throws (for API routes) if not authenticated. */

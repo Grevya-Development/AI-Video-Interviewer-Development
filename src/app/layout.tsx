@@ -25,7 +25,17 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`scroll-smooth ${inter.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-brand-100 selection:text-brand-900">
-        <Navbar user={user ? { email: user.email } : null} />
+        <Navbar
+          user={
+            user
+              ? {
+                  email: user.email,
+                  name: user.name,
+                  avatarUrl: user.avatarUrl,
+                }
+              : null
+          }
+        />
         <div className="flex-1">{children}</div>
       </body>
     </html>

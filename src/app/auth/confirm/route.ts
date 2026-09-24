@@ -2,8 +2,20 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function getTargetOrigin(request: NextRequest): string {
+  const host =
+    request.headers.get("x-forwarded-host") ||
+    request.headers.get("host") ||
+    "localhost:3000";
+  const protocol =
+    request.headers.get("x-forwarded-proto") ||
+    (host.includes("localhost") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
+
 function getRedirectResponse(next: string, request: NextRequest) {
-  const nextUrl = new URL(next, request.url);
+  const origin = getTargetOrigin(request);
+  const nextUrl = new URL(next, origin);
   if (nextUrl.pathname === "/dashboard") {
     nextUrl.searchParams.set("verified", "true");
   }
@@ -16,10 +28,24 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = searchParams.get("next") ?? "/dashboard";
+  const errorDescription =
+    searchParams.get("error_description") || searchParams.get("error");
+
+  const origin = getTargetOrigin(request);
+
+  // If OAuth or Auth provider returned an error query parameter
+  if (errorDescription) {
+    return NextResponse.redirect(
+      new URL(
+        `/login?error=${encodeURIComponent(errorDescription)}`,
+        origin,
+      ),
+    );
+  }
 
   const supabase = createClient();
 
-  // 1. If we have a PKCE authorization code, exchange it for a session cookie
+  // 1. If we have a PKCE authorization code (Google OAuth or email confirmation), exchange it for a session cookie
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
@@ -61,6 +87,6 @@ export async function GET(request: NextRequest) {
 
   // Redirect to login page with an error parameter if verification fails
   return NextResponse.redirect(
-    new URL("/login?error=Verification failed", request.url),
+    new URL("/login?error=Verification failed", origin),
   );
 }
