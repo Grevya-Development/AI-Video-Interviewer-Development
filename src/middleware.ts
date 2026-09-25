@@ -8,14 +8,15 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only the HR areas and auth pages need the (network) auth check + session
-  // refresh. Public pages (landing, candidate /join, report /r, APIs) skip it
+  // Only the HR areas, auth pages, and root landing page need the auth check +
+  // session refresh. Public pages (candidate /join, report /r, APIs) skip it
   // entirely — saving an auth round-trip on every such request.
   const needsAuth =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/interview") ||
     pathname === "/login" ||
-    pathname === "/signup";
+    pathname === "/signup" ||
+    pathname === "/";
 
   if (!needsAuth) return NextResponse.next();
 
@@ -57,8 +58,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Bounce authed users away from auth pages.
-  if ((pathname === "/login" || pathname === "/signup") && user) {
+  // Bounce authed users away from auth pages and the landing page to /dashboard.
+  if ((pathname === "/login" || pathname === "/signup" || pathname === "/") && user) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Eye, EyeOff, MessageSquare, Download } from "lucide-react";
 import type { TranscriptSegmentDTO } from "./types";
 
 function clock(ms: number) {
@@ -58,9 +58,14 @@ export function TranscriptFeed({
   pollMs?: number;
 }) {
   const [segments, setSegments] = useState<TranscriptSegmentDTO[]>(initial);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<"auto" | "off">("auto");
+  const [latestSegment, setLatestSegment] = useState<TranscriptSegmentDTO | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
 
-  // Poll the transcript endpoint — reliable, no Supabase Realtime setup needed.
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prevCountRef = useRef<number>(initial.length);
+
+  // Poll the transcript endpoint
   useEffect(() => {
     let active = true;
     async function poll() {
@@ -70,9 +75,29 @@ export function TranscriptFeed({
         });
         if (!res.ok) return;
         const data = await res.json();
-        if (active && Array.isArray(data.segments)) setSegments(data.segments);
+        if (active && Array.isArray(data.segments)) {
+          const newSegs: TranscriptSegmentDTO[] = data.segments;
+          setSegments(newSegs);
+
+          // If new speech segment arrived or text changed
+          if (newSegs.length > 0) {
+            const sorted = newSegs.slice().sort((a, b) => a.startMs - b.startMs);
+            const newest = sorted[sorted.length - 1];
+
+            if (newSegs.length > prevCountRef.current || newest.text !== latestSegment?.text) {
+              setLatestSegment(newest);
+              setShowPopup(true);
+
+              if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+              hideTimerRef.current = setTimeout(() => {
+                setShowPopup(false);
+              }, 4000); // Hide after 4 seconds
+            }
+          }
+          prevCountRef.current = newSegs.length;
+        }
       } catch {
-        /* ignore transient errors */
+        /* ignore */
       }
     }
     poll();
@@ -80,53 +105,79 @@ export function TranscriptFeed({
     return () => {
       active = false;
       clearInterval(t);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, [sessionId, pollMs]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [segments.length]);
+  }, [sessionId, pollMs, latestSegment?.text]);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2">
-        <h2 className="text-sm font-semibold text-slate-700">Live transcript</h2>
-        <button
-          onClick={() => downloadTranscript(segments, jobTitle)}
-          disabled={segments.length === 0}
-          className="btn-ghost px-2 py-1 text-xs"
-          title="Download transcript (.txt)"
-        >
-          <Download className="h-3.5 w-3.5" /> Download
-        </button>
+    <div className="flex flex-col h-full bg-white rounded-xl overflow-hidden">
+      {/* Header bar with controls */}
+      <div className="flex items-center justify-between border-b border-slate-200 px-3 py-1.5 bg-slate-50/80">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-3.5 w-3.5 text-brand-600" />
+          <span className="text-xs font-semibold text-slate-700">Live Transcript</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          {/* Mode Switcher: Auto & Off only */}
+          <div className="flex items-center rounded-lg bg-slate-200/70 p-0.5 text-[11px] font-medium">
+            <button
+              onClick={() => setViewMode("auto")}
+              className={`rounded px-2.5 py-0.5 transition-colors ${
+                viewMode === "auto"
+                  ? "bg-white text-brand-700 font-bold shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+              title="Auto-display captions for 4 sec when speech is captured"
+            >
+              Auto (4s)
+            </button>
+            <button
+              onClick={() => setViewMode("off")}
+              className={`rounded px-2.5 py-0.5 transition-colors ${
+                viewMode === "off"
+                  ? "bg-white text-slate-900 font-bold shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+              title="Turn off live transcript captions"
+            >
+              Off
+            </button>
+          </div>
+
+          <button
+            onClick={() => downloadTranscript(segments, jobTitle)}
+            disabled={segments.length === 0}
+            className="btn-ghost px-1.5 py-0.5 text-xs text-slate-500 hover:text-slate-800"
+            title="Download transcript (.txt)"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-3">
-        {segments.length === 0 ? (
-          <p className="pt-8 text-center text-sm text-slate-400">
-            Transcript will appear here as the conversation is captured…
-          </p>
-        ) : (
-          segments
-            .slice()
-            .sort((a, b) => a.startMs - b.startMs)
-            .map((s) => (
-              <div key={s.id} className="text-sm leading-relaxed">
-                <span className="mr-2 select-none font-mono text-xs text-slate-400">
-                  {clock(s.startMs)}
-                </span>
-                <span
-                  className={`mr-1.5 font-semibold ${
-                    s.speakerRole === "HR" ? "text-brand-600" : "text-candidate"
-                  }`}
-                >
-                  {s.speakerRole === "HR" ? "Interviewer" : "Candidate"}:
-                </span>
-                <span className="text-slate-700">{s.text}</span>
-              </div>
-            ))
-        )}
-        <div ref={bottomRef} />
-      </div>
+
+      {/* AUTO POPUP MODE (Displays 4-second caption popup when speech comes in) */}
+      {viewMode === "auto" && (
+        <div className="p-2.5 flex items-center justify-center min-h-[50px] relative">
+          {showPopup && latestSegment ? (
+            <div className="w-full max-w-lg rounded-lg bg-slate-900/90 text-white px-3.5 py-2 text-xs shadow-lg backdrop-blur-xs animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <span
+                className={`font-semibold mr-1.5 ${
+                  latestSegment.speakerRole === "HR" ? "text-brand-300" : "text-amber-300"
+                }`}
+              >
+                {latestSegment.speakerRole === "HR" ? "Interviewer" : "Candidate"}:
+              </span>
+              <span className="text-slate-100">{latestSegment.text}</span>
+            </div>
+          ) : (
+            <p className="text-[11px] italic text-slate-400">
+              Captions appear automatically when speaking...
+            </p>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

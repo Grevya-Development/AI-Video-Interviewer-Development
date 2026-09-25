@@ -9,7 +9,6 @@ export default async function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader email={user.email} />
       <main className="mx-auto max-w-md px-4 py-8 sm:px-6 sm:py-12">
         <div className="card p-6">
           <h1 className="text-xl font-bold text-slate-900 mb-1">Reset your password</h1>

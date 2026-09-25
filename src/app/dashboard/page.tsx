@@ -4,6 +4,7 @@ import { Plus, Video, FileBarChart, Clock, CheckCircle } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { DeleteSessionButton } from "@/components/DeleteSessionButton";
 
 const statusStyles: Record<string, string> = {
   DRAFT: "bg-slate-100 text-slate-600",
@@ -35,8 +36,7 @@ export default async function DashboardPage({
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <DashboardHeader email={user.email} />
+    <div className="min-h-screen bg-slate-150">
       <main className="mx-auto max-w-6xl px-6 py-8">
         {searchParams.verified === "true" && (
           <div className="mb-6 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -94,7 +94,7 @@ export default async function DashboardPage({
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs font-medium ${decisionStyles[s.evaluation.decision]}`}
                       >
-                        {s.evaluation.decision} · {s.evaluation.overallScore}
+                        {s.evaluation.decision === "HIRE" ? "APPROVED" : s.evaluation.decision} · {s.evaluation.overallScore}
                       </span>
                     )}
                   </div>
@@ -106,23 +106,26 @@ export default async function DashboardPage({
                     </span>
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 w-full sm:flex-row sm:w-auto sm:flex-shrink-0">
-                  <Link href={`/interview/${s.id}`} className="btn-secondary w-full sm:w-auto">
-                    <Video className="h-4 w-4" />
-                    {s.status === "ENDED" ? "Re-open room" : "Open room"}
-                  </Link>
-                  {s.evaluation ? (
-                    <Link href={`/r/${s.reportToken}`} className="btn-primary w-full sm:w-auto">
-                      <FileBarChart className="h-4 w-4" /> Report
+                <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-shrink-0">
+                  <div className="flex flex-col gap-2 w-full sm:flex-row sm:w-auto flex-1">
+                    <Link href={`/interview/${s.id}`} className="btn-secondary w-full sm:w-auto">
+                      <Video className="h-4 w-4" />
+                      {s.status === "ENDED" ? "Re-open room" : "Open room"}
                     </Link>
-                  ) : (
-                    <Link
-                      href={`/interview/${s.id}`}
-                      className="btn-ghost text-brand-600 w-full sm:w-auto"
-                    >
-                      Evaluate →
-                    </Link>
-                  )}
+                    {s.evaluation ? (
+                      <Link href={`/r/${s.reportToken}`} className="btn-primary w-full sm:w-auto">
+                        <FileBarChart className="h-4 w-4" /> Report
+                      </Link>
+                    ) : (
+                      <Link
+                        href={`/interview/${s.id}`}
+                        className="btn-ghost text-brand-600 w-full sm:w-auto"
+                      >
+                        Evaluate →
+                      </Link>
+                    )}
+                  </div>
+                  <DeleteSessionButton sessionId={s.id} jobTitle={s.jobTitle} />
                 </div>
               </div>
             ))}

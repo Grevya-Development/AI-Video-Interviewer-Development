@@ -1,37 +1,50 @@
-import Image from "next/image";
+import React from "react";
+import { GrevyaEmblem } from "./GrevyaEmblem";
 
 /**
- * Grevya · Interview IQ brand lockup.
- * `variant="dark"` renders light text for dark backgrounds (candidate room).
+ * Grevya AI Interviewer brand lockup.
+ * Features the modern AI squircle emblem with bold tracked typography matching the website theme.
  */
 export function Brand({
   variant = "light",
   size = "md",
+  subtitle = "AI INTERVIEWER",
 }: {
-  variant?: "light" | "dark";
+  variant?: "light" | "dark" | "pill";
   size?: "sm" | "md" | "lg";
+  subtitle?: string;
 }) {
-  const icon = size === "sm" ? 22 : size === "lg" ? 34 : 28;
-  const text =
-    size === "sm" ? "text-base" : size === "lg" ? "text-2xl" : "text-lg";
-  const grevya = variant === "dark" ? "text-white" : "text-slate-900";
-  const iq = "text-[#02a4ef]";
+  const iconSize = size === "sm" ? 28 : size === "lg" ? 42 : 34;
+  const textColor = variant === "dark" ? "text-white" : "text-slate-900";
+  const subColor = variant === "dark" ? "text-cyan-400" : "text-brand-600";
 
   return (
-    <span className="inline-flex items-center gap-1 sm:gap-2">
-      <Image
-        src="/grevya-icon.svg"
-        alt="Grevya"
-        width={icon}
-        height={icon}
-        priority
-      />
-      <span className={`font-bold tracking-tight ${text}`}>
-        <span className={grevya}>Grevya</span>
-        <span className="hidden sm:inline text-slate-400"> · </span>
-        <span className={`hidden sm:inline ${iq}`}>Interview IQ</span>
-        <span className={`sm:hidden ${iq}`}> IQ</span>
-      </span>
-    </span>
+    <div className="inline-flex items-center gap-2.5 sm:gap-3 select-none">
+      <GrevyaEmblem size={iconSize} variant={variant === "dark" ? "dark" : "brand"} />
+      <div className="flex flex-col leading-none">
+        <span
+          className={`font-bold tracking-[0.16em] uppercase font-sans ${
+            size === "sm"
+              ? "text-xs"
+              : size === "lg"
+              ? "text-lg"
+              : "text-[15px] sm:text-base"
+          } ${textColor}`}
+        >
+          Grevya
+        </span>
+        <span
+          className={`font-semibold tracking-[0.24em] uppercase font-sans ${
+            size === "sm"
+              ? "text-[7.5px]"
+              : size === "lg"
+              ? "text-[10px]"
+              : "text-[8.5px] sm:text-[9.5px]"
+          } ${subColor} mt-0.5`}
+        >
+          {subtitle}
+        </span>
+      </div>
+    </div>
   );
 }

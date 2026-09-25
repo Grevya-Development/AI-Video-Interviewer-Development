@@ -16,7 +16,8 @@ const schema = z.object({
  * - Candidate: pass { candidateToken } (the secret link token), no auth.
  */
 export async function POST(req: Request) {
-  const parsed = schema.safeParse(await req.json());
+  const body = await req.json().catch(() => ({}));
+  const parsed = schema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
@@ -29,19 +30,29 @@ export async function POST(req: Request) {
     if (!session)
       return NextResponse.json({ error: "Invalid link" }, { status: 404 });
 
-    const participant = await prisma.participant.findFirst({
+    let participant = await prisma.participant.findFirst({
       where: { sessionId: session.id, role: "CANDIDATE" },
     });
+    if (!participant) {
+      participant = await prisma.participant.create({
+        data: {
+          sessionId: session.id,
+          role: "CANDIDATE",
+          displayName: "Candidate",
+        },
+      });
+    }
+
     const identity = `candidate-${session.id}`;
     await prisma.participant.update({
-      where: { id: participant!.id },
+      where: { id: participant.id },
       data: { identity, joinedAt: new Date() },
     });
 
     const token = await createLiveKitToken({
       roomName: session.roomName,
       identity,
-      name: participant?.displayName ?? "Candidate",
+      name: participant.displayName ?? "Candidate",
       metadata: JSON.stringify({ role: "CANDIDATE" }),
     });
 
@@ -66,12 +77,22 @@ export async function POST(req: Request) {
   if (!session)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const participant = await prisma.participant.findFirst({
+  let participant = await prisma.participant.findFirst({
     where: { sessionId: session.id, role: "HR" },
   });
+  if (!participant) {
+    participant = await prisma.participant.create({
+      data: {
+        sessionId: session.id,
+        role: "HR",
+        displayName: user.name ?? "Interviewer",
+      },
+    });
+  }
+
   const identity = `hr-${session.id}`;
   await prisma.participant.update({
-    where: { id: participant!.id },
+    where: { id: participant.id },
     data: { identity, joinedAt: new Date() },
   });
 

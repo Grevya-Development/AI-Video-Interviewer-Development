@@ -73,7 +73,9 @@ export async function POST(req: Request) {
     text = await transcribeAudio(audio, filename);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Transcription failed";
-    console.error("[/api/transcribe]", message);
+    if (!message.includes("429")) {
+      console.warn("[/api/transcribe]", message);
+    }
     return NextResponse.json({ error: message }, { status: 502 });
   }
 

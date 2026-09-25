@@ -70,10 +70,16 @@ export async function PATCH(
           process.env.LIVEKIT_API_KEY,
           process.env.LIVEKIT_API_SECRET,
         );
-        await svc.deleteRoom(session.roomName);
-        console.log(`Successfully deleted LiveKit room on session end: ${session.roomName}`);
-      } catch (err) {
-        console.error("Failed to delete LiveKit room:", err);
+        const rooms = await svc.listRooms([session.roomName]);
+        if (rooms && rooms.length > 0) {
+          try {
+            await svc.deleteRoom(session.roomName);
+          } catch (err) {
+            console.error("Failed to delete LiveKit room:", err);
+          }
+        }
+      } catch {
+        // Silently ignore list rooms error if room is not found
       }
     }
   }
@@ -91,8 +97,30 @@ export async function DELETE(
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!(await ownedSession(params.id, user.id)))
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const session = await ownedSession(params.id, user.id);
+  if (!session) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "";
+  const httpUrl = wsUrl.replace(/^ws/, "http");
+  if (httpUrl && process.env.LIVEKIT_API_KEY && process.env.LIVEKIT_API_SECRET) {
+    try {
+      const svc = new RoomServiceClient(
+        httpUrl,
+        process.env.LIVEKIT_API_KEY,
+        process.env.LIVEKIT_API_SECRET,
+      );
+      const rooms = await svc.listRooms([session.roomName]);
+      if (rooms && rooms.length > 0) {
+        try {
+          await svc.deleteRoom(session.roomName);
+        } catch (err) {
+          console.error("Failed to delete LiveKit room:", err);
+        }
+      }
+    } catch {
+      // Silently ignore list rooms error if room is not found
+    }
+  }
 
   await prisma.session.delete({ where: { id: params.id } });
 

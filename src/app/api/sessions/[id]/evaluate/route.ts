@@ -174,6 +174,81 @@ export async function POST(
   });
 }
 
+// PUT /api/sessions/:id/evaluate — save custom/manual HR evaluation.
+export async function PUT(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const session = await prisma.session.findFirst({
+    where: { id: params.id, ownerId: user.id },
+  });
+  if (!session)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const body = await req.json();
+  const {
+    decision,
+    overallScore,
+    hireRationale,
+    strengths,
+    gaps,
+    candidateFeedback,
+    dimensionScores,
+    improvementSuggestions,
+  } = body;
+
+  const validDecision = ["HIRE", "HOLD", "REJECT"].includes(decision)
+    ? decision
+    : "HOLD";
+
+  const evaluation = await prisma.evaluationResult.upsert({
+    where: { sessionId: session.id },
+    create: {
+      sessionId: session.id,
+      decision: validDecision,
+      overallScore: clampScore(overallScore),
+      dimensionScores: asJson(dimensionScores || {}),
+      hireRationale: hireRationale || "",
+      strengths: Array.isArray(strengths) ? strengths : [],
+      gaps: Array.isArray(gaps) ? gaps : [],
+      candidateFeedback: candidateFeedback || "",
+      improvementSuggestions: Array.isArray(improvementSuggestions)
+        ? improvementSuggestions
+        : [],
+      model: "HR Manual Evaluation",
+    },
+    update: {
+      decision: validDecision,
+      overallScore: clampScore(overallScore),
+      ...(dimensionScores ? { dimensionScores: asJson(dimensionScores) } : {}),
+      hireRationale: hireRationale || "",
+      strengths: Array.isArray(strengths) ? strengths : [],
+      gaps: Array.isArray(gaps) ? gaps : [],
+      candidateFeedback: candidateFeedback || "",
+      ...(improvementSuggestions
+        ? { improvementSuggestions: Array.isArray(improvementSuggestions) ? improvementSuggestions : [] }
+        : {}),
+    },
+  });
+
+  if (session.status !== "ENDED") {
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { status: "ENDED", endedAt: session.endedAt ?? new Date() },
+    });
+  }
+
+  revalidatePath("/dashboard");
+
+  return NextResponse.json({
+    evaluation,
+    reportUrl: `/r/${session.reportToken}`,
+  });
+}
+
 function clampScore(n: number) {
   return Math.max(0, Math.min(100, Math.round(n || 0)));
 }

@@ -41,6 +41,7 @@ model User {
   authUserId String    @unique // Supabase auth.users.id
   email      String    @unique
   name       String?
+  avatarUrl  String?
   createdAt  DateTime  @default(now())
   sessions   Session[]
 }
@@ -60,6 +61,7 @@ model Session {
 
   // Optional countdown target in minutes (null = elapsed-only timer).
   durationMinutes Int?
+  maxCandidates   Int?
 
   startedAt      DateTime?
   endedAt        DateTime?
@@ -82,6 +84,7 @@ model Participant {
   id          String   @id @default(cuid())
   role        Role
   displayName String
+  email       String?
   // LiveKit participant identity, set when they connect.
   identity    String?
   joinedAt    DateTime?

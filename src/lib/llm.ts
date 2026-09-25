@@ -6,7 +6,7 @@
 
 const LLM_API_URL = process.env.LLM_API_URL ?? "https://api.groq.com/openai/v1";
 const LLM_API_KEY = process.env.LLM_API_KEY ?? "";
-const LLM_MODEL = process.env.LLM_MODEL ?? "llama-3.3-70b-versatile";
+const LLM_MODEL = process.env.LLM_MODEL ?? "openai/gpt-oss-120b";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -45,7 +45,11 @@ export async function chatCompletion(
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content ?? "";
+  let content = data.choices?.[0]?.message?.content ?? "";
+  // Strip reasoning/think tags if present
+  content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  return content;
 }
 
 export { LLM_MODEL };
+
